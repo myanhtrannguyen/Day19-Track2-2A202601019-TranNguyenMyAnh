@@ -54,7 +54,7 @@ make seed            Both: regenerate data/ files
 make api             Lite: FastAPI on :8000
 make lab             Lite: Jupyter Lab on :8888
 make benchmark       Both: Precision@10 + P99 latency table
-make test            Both: pytest (34 tests, ~2 s)
+make test            Both: pytest (41 tests, ~2 s)
 make gen-advanced    Both: regenerate NB6 compound queries + NB8 spend parquet
 make notebooks       Both: execute ALL notebooks headless (what the grader runs)
 make clean-lite      Lite: wipe venv + data + Feast registry

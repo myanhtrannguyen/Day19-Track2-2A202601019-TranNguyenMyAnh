@@ -9,6 +9,7 @@ __pycache__/
 
 # Jupyter
 .ipynb_checkpoints/
+.jupyter/
 # NOTE: notebooks/*.ipynb IS committed for submission (with output cells preserved
 # for grading). The Jupytext `.py` files are the source-of-truth template;
 # `.ipynb` is the student's executed deliverable.
@@ -17,6 +18,7 @@ __pycache__/
 data/corpus_vn.jsonl
 data/golden_set.jsonl
 data/qdrant_storage/
+:memory:.ses
 .feast/
 app/feast_repo/data/
 app/feast_repo/registry.db

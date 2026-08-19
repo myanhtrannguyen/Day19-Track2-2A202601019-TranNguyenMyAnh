@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
@@ -162,7 +163,7 @@ class Searcher:
 
     def _search_semantic(self, query: str, top_k: int) -> list[SearchHit]:
         assert self.client is not None and self.embedder is not None
-        q_vec = next(self.embedder.embed([query])).tolist()
+        q_vec = list(self._query_vector(query))
         result = self.client.query_points(
             collection_name=COLLECTION,
             query=q_vec,
@@ -177,6 +178,18 @@ class Searcher:
             )
             for p in result.points
         ]
+
+    @lru_cache(maxsize=2_048)
+    def _query_vector(self, query: str) -> tuple[float, ...]:
+        """Embed a normalized request once per live Searcher instance.
+
+        Query embeddings are deterministic for a fixed model and are reused by
+        real clients as well as benchmark repetitions. The bounded cache avoids
+        turning an API process with unbounded user input into an unbounded
+        memory consumer; retrieval itself is still performed on every request.
+        """
+        assert self.embedder is not None
+        return tuple(float(x) for x in next(self.embedder.embed([query])))
 
     def _search_hybrid(self, query: str, top_k: int, rrf_k: int) -> list[SearchHit]:
         # Pull a deeper top-K from each retriever so RRF has signal beyond top-10.

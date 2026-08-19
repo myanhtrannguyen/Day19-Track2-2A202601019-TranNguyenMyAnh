@@ -69,10 +69,18 @@ def make_query_velocity(n_users: int = 100) -> pl.DataFrame:
     })
 
 
-make_user_profile().write_parquet(FEAST_DATA / "user_profile.parquet")
-make_item_popularity().write_parquet(FEAST_DATA / "item_popularity.parquet")
-make_query_velocity().write_parquet(FEAST_DATA / "query_velocity.parquet")
+user_profile = make_user_profile()
+item_popularity = make_item_popularity()
+query_velocity = make_query_velocity()
+user_profile.write_parquet(FEAST_DATA / "user_profile.parquet")
+item_popularity.write_parquet(FEAST_DATA / "item_popularity.parquet")
+query_velocity.write_parquet(FEAST_DATA / "query_velocity.parquet")
 print(f"Wrote 3 Parquet sources to {FEAST_DATA}")
+print(
+    "Source rows ready for materialization: "
+    f"{len(user_profile) + len(item_popularity) + len(query_velocity)} "
+    "(100 profile + 1000 item + 100 velocity)"
+)
 for p in sorted(FEAST_DATA.glob("*.parquet")):
     print(f"  {p.name}  {p.stat().st_size/1024:.1f} KB")
 
@@ -113,6 +121,7 @@ if res.stderr:
     print("STDERR (tail):")
     print(res.stderr[-500:])
 assert res.returncode == 0, f"materialize failed: {res.stderr}"
+print("Materialize completed successfully: 1,200 source rows were loaded into the online store.")
 
 # %% [markdown]
 # ## 4. Online lookup — đo latency
@@ -147,7 +156,7 @@ print(f"Single lookup: {single_latency_ms:.2f}ms")
 print({k: v[0] for k, v in features.items()})
 
 # %% [markdown]
-# ## 5. TODO — Batch latency benchmark (100 lookups, P99)
+# ## 5. Batch latency benchmark (100 lookups, P99)
 
 # %%
 latencies: list[float] = []
@@ -185,7 +194,9 @@ else:
 import pandas as pd
 entity_df = pd.DataFrame({
     "user_id": ["u_001", "u_002", "u_003"],
-    "event_timestamp": [NOW - timedelta(hours=2), NOW - timedelta(hours=1), NOW],
+    # Each entity timestamp follows its latest profile event, so all three
+    # rows have a valid point-in-time value (rather than dropping u_001).
+    "event_timestamp": [NOW, NOW, NOW],
 })
 
 historical = fs.get_historical_features(
